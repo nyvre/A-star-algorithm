@@ -67,9 +67,54 @@ class GuiManager:
         self.isEnd = True
 
     def startAlgorithm(self, event):
-        print('Wystartowano algorytm')
+        aStarAlgorithm = AStarAlgorithm(self.board, self.startNode, self.endNode, self.obstacleGrid)
 
+class Node:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.g = None
+        self.h = None
 
+    def getG(self):
+        return self.g
+
+    def getH(self):
+        return self.h
+
+    def setG(self, g):
+        self.g = g
+
+    def setH(self, h):
+        self.h = h
+
+class AStarAlgorithm:
+    def __init__(self, visualGrid, startNode, endNode, obstacleGrid):
+        self.visualGrid = visualGrid
+        self.startNode = startNode
+        self.endNode = endNode
+        self.obstacleGrid = obstacleGrid
+        self.openNodesArray = []
+        print(self.getNeighbours(startNode[0], startNode[1]))
+
+    def createOpenNodes(self):
+        for i in Range(16):
+            for j in Range(16):
+                openNodesArray.append(i, j)
+        
+    def getNeighbours(self, i, j):
+        neighbours = []
+        neighbours.append([i - 1, j - 1])
+        neighbours.append([i - 1, j])
+        neighbours.append([i - 1, j + 1])
+        neighbours.append([i, j + 1])
+        neighbours.append([i + 1, j + 1])
+        neighbours.append([i + 1, j])
+        neighbours.append([i + 1, j - 1])
+        neighbours.append([i, j - 1])
+        neighbours[:] = [neighbour for neighbour in neighbours if self.obstacleGrid[neighbour[0]][neighbour[1]] != True]
+        return neighbours
+    
 guiManager = GuiManager()
 guiManager.start()
 
