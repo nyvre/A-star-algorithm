@@ -1,4 +1,5 @@
 import tkinter as tk
+import math
 
 class GuiManager:
     def __init__(self):
@@ -73,8 +74,25 @@ class Node:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.g = None
-        self.h = None
+        self.g = 0
+        self.h = 0
+        self.f = 0
+
+    def getDistance(self, otherNode):
+        totalDistance = 0
+        disX = abs(self.x - otherNode.x)
+        disY = abs(self.y - otherNode.y)
+        print("disX" + str(disX))
+        print("disY" + str(disY))
+        disDiag = min(disX, disY)
+        print("disDiag" + str(disDiag))
+        disStraight = abs(disX - disY)
+        print("disStr" + str(disStraight))
+        totalDistance = disDiag * math.sqrt(2) + disStraight
+        print("Total distance")
+        print(totalDistance)
+        return totalDistance
+        
 
     def getG(self):
         return self.g
@@ -84,36 +102,63 @@ class Node:
 
     def setG(self, g):
         self.g = g
+        self.updateF()
 
-    def setH(self, h):
-        self.h = h
+    def setH(self, endNode):
+        self.h = self.getDistance(endNode)
+        self.updateF()
+
+    def updateF(self):
+        self.f = self.h + self.g
+
+    def __eq__(self, otherNode):
+        return self.x == otherNode.x and self.y == otherNode.y
+
+    def __lt__(self, otherNode):
+        return self.f < otherNode.f
+
+    def __str__(self):
+        return '[' + str(self.x) + ', ' + str(self.y) + '] g: ' + str(self.g) + ' h: ' + str(self.h) + ' f: ' + str(self.f)
 
 class AStarAlgorithm:
     def __init__(self, visualGrid, startNode, endNode, obstacleGrid):
         self.visualGrid = visualGrid
-        self.startNode = startNode
-        self.endNode = endNode
+        self.startNode = Node(startNode[0], startNode[1])
+        self.endNode = Node(endNode[0], endNode[1])
         self.obstacleGrid = obstacleGrid
         self.openNodesArray = []
-        print(self.getNeighbours(startNode[0], startNode[1]))
-
-    def createOpenNodes(self):
-        for i in Range(16):
-            for j in Range(16):
-                openNodesArray.append(i, j)
+        self.closedNodesArray = []
+        self.start()
         
     def getNeighbours(self, i, j):
         neighbours = []
-        neighbours.append([i - 1, j - 1])
-        neighbours.append([i - 1, j])
-        neighbours.append([i - 1, j + 1])
-        neighbours.append([i, j + 1])
-        neighbours.append([i + 1, j + 1])
-        neighbours.append([i + 1, j])
-        neighbours.append([i + 1, j - 1])
-        neighbours.append([i, j - 1])
-        neighbours[:] = [neighbour for neighbour in neighbours if self.obstacleGrid[neighbour[0]][neighbour[1]] != True]
+        neighbours.append(Node(i - 1, j - 1))
+        neighbours.append(Node(i - 1, j))
+        neighbours.append(Node(i - 1, j + 1))
+        neighbours.append(Node(i, j + 1))
+        neighbours.append(Node(i + 1, j + 1))
+        neighbours.append(Node(i + 1, j))
+        neighbours.append(Node(i + 1, j - 1))
+        neighbours.append(Node(i, j - 1))
+        neighbours[:] = [neighbour for neighbour in neighbours if self.obstacleGrid[neighbour.x][neighbour.y] != True]
         return neighbours
+
+    def start(self):
+        self.openNodesArray.append(self.startNode)
+        self.openNodesArray.sort()
+        currentNode = self.openNodesArray.pop()
+        currentNodeNeighbours = self.getNeighbours(currentNode.x, currentNode.y)
+        for currentNodeNeighbour in currentNodeNeighbours:
+            print("Set H")
+            currentNodeNeighbour.setH(self.endNode)
+            print("Set G")
+            print(currentNode.f)
+            print(currentNodeNeighbour.getDistance(currentNode))
+            currentNodeNeighbour.setG = currentNode.f + currentNodeNeighbour.getDistance(currentNode)
+            print(currentNodeNeighbour)
+
+
+            
     
 guiManager = GuiManager()
 guiManager.start()
