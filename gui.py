@@ -77,20 +77,15 @@ class Node:
         self.g = 0
         self.h = 0
         self.f = 0
+        self.parentNode = None
 
     def getDistance(self, otherNode):
         totalDistance = 0
         disX = abs(self.x - otherNode.x)
         disY = abs(self.y - otherNode.y)
-        print("disX" + str(disX))
-        print("disY" + str(disY))
         disDiag = min(disX, disY)
-        print("disDiag" + str(disDiag))
         disStraight = abs(disX - disY)
-        print("disStr" + str(disStraight))
         totalDistance = disDiag * math.sqrt(2) + disStraight
-        print("Total distance")
-        print(totalDistance)
         return totalDistance
         
 
@@ -107,6 +102,11 @@ class Node:
     def setH(self, endNode):
         self.h = self.getDistance(endNode)
         self.updateF()
+    def setParent(self, parentNode):
+        self.parentNode = parentNode
+
+    def getF(self):
+        return self.f
 
     def updateF(self):
         self.f = self.h + self.g
@@ -115,7 +115,7 @@ class Node:
         return self.x == otherNode.x and self.y == otherNode.y
 
     def __lt__(self, otherNode):
-        return self.f < otherNode.f
+        return self.f > otherNode.f
 
     def __str__(self):
         return '[' + str(self.x) + ', ' + str(self.y) + '] g: ' + str(self.g) + ' h: ' + str(self.h) + ' f: ' + str(self.f)
@@ -132,30 +132,68 @@ class AStarAlgorithm:
         
     def getNeighbours(self, i, j):
         neighbours = []
-        neighbours.append(Node(i - 1, j - 1))
-        neighbours.append(Node(i - 1, j))
-        neighbours.append(Node(i - 1, j + 1))
-        neighbours.append(Node(i, j + 1))
-        neighbours.append(Node(i + 1, j + 1))
-        neighbours.append(Node(i + 1, j))
-        neighbours.append(Node(i + 1, j - 1))
-        neighbours.append(Node(i, j - 1))
+        if i > 0 and j > 0:
+            neighbours.append(Node(i - 1, j - 1))
+        if i > 0:
+            neighbours.append(Node(i - 1, j))
+        if i > 0 and j < 14:
+            neighbours.append(Node(i - 1, j + 1))
+        if j < 14:
+            neighbours.append(Node(i, j + 1))
+        if i < 14 and j < 14:
+            neighbours.append(Node(i + 1, j + 1))
+        if i < 14:
+            neighbours.append(Node(i + 1, j))
+        if i < 14 and j > 0:
+            neighbours.append(Node(i + 1, j - 1))
+        if j > 0:
+            neighbours.append(Node(i, j - 1))
         neighbours[:] = [neighbour for neighbour in neighbours if self.obstacleGrid[neighbour.x][neighbour.y] != True]
         return neighbours
 
     def start(self):
         self.openNodesArray.append(self.startNode)
-        self.openNodesArray.sort()
-        currentNode = self.openNodesArray.pop()
-        currentNodeNeighbours = self.getNeighbours(currentNode.x, currentNode.y)
-        for currentNodeNeighbour in currentNodeNeighbours:
-            print("Set H")
-            currentNodeNeighbour.setH(self.endNode)
-            print("Set G")
-            print(currentNode.f)
-            print(currentNodeNeighbour.getDistance(currentNode))
-            currentNodeNeighbour.setG = currentNode.f + currentNodeNeighbour.getDistance(currentNode)
-            print(currentNodeNeighbour)
+        while(self.openNodesArray):
+            self.openNodesArray.sort()
+            print("lista")
+            for node in self.openNodesArray:
+                print(node)
+            print("end lista")
+            currentNode = self.openNodesArray.pop()
+            print(currentNode)
+            if currentNode == self.endNode:
+                self.closedNodesArray.append(currentNode)
+                break
+            currentNodeNeighbours = self.getNeighbours(currentNode.x, currentNode.y)
+            for currentNodeNeighbour in currentNodeNeighbours:
+                if currentNodeNeighbour in self.openNodesArray:
+                    print("pierwszy wszed")
+                    if currentNodeNeighbour.getG() <= currentNode.getF(): 
+                        continue
+                elif currentNodeNeighbour in self.closedNodesArray:
+                    print("drigu wszed")
+                    if currentNodeNeighbour.getG() <= currentNode.getF(): 
+                        continue
+                    self.openNodesArray.remove(currentNodeNeighbour)
+                else:
+                    print("czeci wszed")
+                    currentNodeNeighbour.setH(self.endNode)
+                    currentNodeNeighbour.setG(currentNode.f + currentNodeNeighbour.getDistance(currentNode))
+                    currentNodeNeighbour.setParent(currentNode)
+                    self.openNodesArray.append(currentNodeNeighbour)
+            self.closedNodesArray.append(currentNode)
+        if currentNode == self.endNode:
+            print("GREAT SUCCESS")
+            self.reconstructPath()
+
+    def reconstructPath(self):
+        node = self.endNode
+        while node != self.startNode:
+            print(node)
+            node = self.closedNodesArray[self.closedNodesArray.index(node)].parentNode
+            self.visualGrid.create_rectangle(node.x*30, node.y*30, node.x*30 + 30, node.y*30 + 30, fill = 'red')
+
+
 
 
             
