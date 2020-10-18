@@ -1,5 +1,6 @@
 import tkinter as tk
 import math
+import time
 
 class GuiManager:
     def __init__(self):
@@ -155,41 +156,38 @@ class AStarAlgorithm:
         self.openNodesArray.append(self.startNode)
         while(self.openNodesArray):
             self.openNodesArray.sort()
-            print("lista")
-            for node in self.openNodesArray:
-                print(node)
-            print("end lista")
             currentNode = self.openNodesArray.pop()
             print(currentNode)
+            for closedNode in self.closedNodesArray:
+                self.visualGrid.create_rectangle(closedNode.x*30, closedNode.y*30, closedNode.x*30 + 30, closedNode.y*30 + 30, fill = 'blue')
+            for openNode in self.openNodesArray:
+                self.visualGrid.create_rectangle(openNode.x*30, openNode.y*30, openNode.x*30 + 30, openNode.y*30 + 30, fill = 'green')
+            #time.sleep(2)
             if currentNode == self.endNode:
                 self.closedNodesArray.append(currentNode)
                 break
             currentNodeNeighbours = self.getNeighbours(currentNode.x, currentNode.y)
             for currentNodeNeighbour in currentNodeNeighbours:
+                neighbourCurrentCost = currentNode.getG() + currentNode.getDistance(currentNodeNeighbour)
                 if currentNodeNeighbour in self.openNodesArray:
-                    print("pierwszy wszed")
-                    if currentNodeNeighbour.getG() <= currentNode.getF(): 
+                    if currentNodeNeighbour.getG() <= neighbourCurrentCost: 
                         continue
                 elif currentNodeNeighbour in self.closedNodesArray:
-                    print("drigu wszed")
-                    if currentNodeNeighbour.getG() <= currentNode.getF(): 
+                    if currentNodeNeighbour.getG() <= neighbourCurrentCost: 
                         continue
                     self.openNodesArray.remove(currentNodeNeighbour)
                 else:
-                    print("czeci wszed")
                     currentNodeNeighbour.setH(self.endNode)
-                    currentNodeNeighbour.setG(currentNode.f + currentNodeNeighbour.getDistance(currentNode))
+                    currentNodeNeighbour.setG(neighbourCurrentCost)
                     currentNodeNeighbour.setParent(currentNode)
                     self.openNodesArray.append(currentNodeNeighbour)
             self.closedNodesArray.append(currentNode)
         if currentNode == self.endNode:
-            print("GREAT SUCCESS")
             self.reconstructPath()
 
     def reconstructPath(self):
         node = self.endNode
         while node != self.startNode:
-            print(node)
             node = self.closedNodesArray[self.closedNodesArray.index(node)].parentNode
             self.visualGrid.create_rectangle(node.x*30, node.y*30, node.x*30 + 30, node.y*30 + 30, fill = 'red')
 
