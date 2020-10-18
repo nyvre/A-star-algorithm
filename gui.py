@@ -9,6 +9,7 @@ class GuiManager:
         self.isEnd = False
         self.startNode = [None, None]
         self.endNode = [None, None]
+        self.path = []
         
 
     def start(self):
@@ -70,6 +71,14 @@ class GuiManager:
 
     def startAlgorithm(self, event):
         aStarAlgorithm = AStarAlgorithm(self.board, self.startNode, self.endNode, self.obstacleGrid)
+        self.path = aStarAlgorithm.start()
+        self.drawPath()
+
+    def drawPath(self):
+        for node in self.path:
+            self.board.create_rectangle(node.x*30, node.y*30, node.x*30 + 30, node.y*30 + 30, fill = 'red')
+
+
 
 class Node:
     def __init__(self, x, y):
@@ -103,11 +112,9 @@ class Node:
     def setH(self, endNode):
         self.h = self.getDistance(endNode)
         self.updateF()
+
     def setParent(self, parentNode):
         self.parentNode = parentNode
-
-    def getF(self):
-        return self.f
 
     def updateF(self):
         self.f = self.h + self.g
@@ -129,27 +136,24 @@ class AStarAlgorithm:
         self.obstacleGrid = obstacleGrid
         self.openNodesArray = []
         self.closedNodesArray = []
-        self.start()
         
     def getNeighbours(self, i, j):
         neighbours = []
-        if i > 0 and j > 0:
-            neighbours.append(Node(i - 1, j - 1))
-        if i > 0:
-            neighbours.append(Node(i - 1, j))
-        if i > 0 and j < 14:
-            neighbours.append(Node(i - 1, j + 1))
-        if j < 14:
-            neighbours.append(Node(i, j + 1))
-        if i < 14 and j < 14:
-            neighbours.append(Node(i + 1, j + 1))
-        if i < 14:
-            neighbours.append(Node(i + 1, j))
-        if i < 14 and j > 0:
-            neighbours.append(Node(i + 1, j - 1))
-        if j > 0:
-            neighbours.append(Node(i, j - 1))
+        neighbours.append(Node(i - 1, j - 1))
+        neighbours.append(Node(i - 1, j))
+        neighbours.append(Node(i - 1, j + 1))
+        neighbours.append(Node(i, j + 1))
+        neighbours.append(Node(i + 1, j + 1))
+        neighbours.append(Node(i + 1, j))
+        neighbours.append(Node(i + 1, j - 1))
+        neighbours.append(Node(i, j - 1))
+        neighbours[:] = [neighbour for neighbour in neighbours if neighbour.x >= 0 and neighbour.x <= 14 and neighbour.y >= 0 and neighbour.y <= 14]
         neighbours[:] = [neighbour for neighbour in neighbours if self.obstacleGrid[neighbour.x][neighbour.y] != True]
+        for index, neighbour in enumerate(neighbours):
+            if neighbour in self.closedNodesArray:
+                neighbours[index] = self.closedNodesArray[self.closedNodesArray.index(neighbour)]
+            if neighbour in self.openNodesArray:
+                neighbours[index] = self.openNodesArray[self.openNodesArray.index(neighbour)]
         return neighbours
 
     def start(self):
@@ -162,7 +166,6 @@ class AStarAlgorithm:
                 self.visualGrid.create_rectangle(closedNode.x*30, closedNode.y*30, closedNode.x*30 + 30, closedNode.y*30 + 30, fill = 'blue')
             for openNode in self.openNodesArray:
                 self.visualGrid.create_rectangle(openNode.x*30, openNode.y*30, openNode.x*30 + 30, openNode.y*30 + 30, fill = 'green')
-            #time.sleep(2)
             if currentNode == self.endNode:
                 self.closedNodesArray.append(currentNode)
                 break
@@ -172,10 +175,15 @@ class AStarAlgorithm:
                 if currentNodeNeighbour in self.openNodesArray:
                     if currentNodeNeighbour.getG() <= neighbourCurrentCost: 
                         continue
+                    currentNodeNeighbour.setG(neighbourCurrentCost)
+                    currentNodeNeighbour.setParent(currentNode)
                 elif currentNodeNeighbour in self.closedNodesArray:
                     if currentNodeNeighbour.getG() <= neighbourCurrentCost: 
                         continue
-                    self.openNodesArray.remove(currentNodeNeighbour)
+                    currentNodeNeighbour.setG(neighbourCurrentCost)
+                    currentNodeNeighbour.setParent(currentNode)
+                    self.openNodesArray.append(currentNodeNeighbour)
+                    self.closedNodesArray.remove(currentNodeNeighbour)
                 else:
                     currentNodeNeighbour.setH(self.endNode)
                     currentNodeNeighbour.setG(neighbourCurrentCost)
@@ -183,14 +191,17 @@ class AStarAlgorithm:
                     self.openNodesArray.append(currentNodeNeighbour)
             self.closedNodesArray.append(currentNode)
         if currentNode == self.endNode:
-            self.reconstructPath()
+            return self.reconstructPath()
+        else:
+            return []
 
     def reconstructPath(self):
         node = self.endNode
-        while node != self.startNode:
+        pathNodes = []
+        while self.closedNodesArray[self.closedNodesArray.index(node)].parentNode != self.startNode:
             node = self.closedNodesArray[self.closedNodesArray.index(node)].parentNode
-            self.visualGrid.create_rectangle(node.x*30, node.y*30, node.x*30 + 30, node.y*30 + 30, fill = 'red')
-
+            pathNodes.append(node)
+        return pathNodes
 
 
 
