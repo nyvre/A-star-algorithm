@@ -25,10 +25,12 @@ class GuiManager:
         createStartButton = tk.Button(window, text = 'Set start')
         createEndButton = tk.Button(window, text = 'Set end')
         findPathButton = tk.Button(window, text = 'Find path')
+        self.stepSlider = tk.Scale(window, from_=0, to=5)
         self.board.pack()
         createStartButton.pack()
         createEndButton.pack()
         findPathButton.pack()
+        self.stepSlider.pack()
         createStartButton.bind('<Button-1>', self.createStartNode)
         createEndButton.bind('<Button-1>', self.createEndNode)
         findPathButton.bind('<Button-1>', self.startAlgorithm)
@@ -70,7 +72,7 @@ class GuiManager:
         self.isEnd = True
 
     def startAlgorithm(self, event):
-        aStarAlgorithm = AStarAlgorithm(self.board, self.startNode, self.endNode, self.obstacleGrid)
+        aStarAlgorithm = AStarAlgorithm(self.board, self.startNode, self.endNode, self.obstacleGrid, self.stepSlider.get())
         self.path = aStarAlgorithm.start()
         self.drawPath()
 
@@ -129,13 +131,14 @@ class Node:
         return '[' + str(self.x) + ', ' + str(self.y) + '] g: ' + str(self.g) + ' h: ' + str(self.h) + ' f: ' + str(self.f)
 
 class AStarAlgorithm:
-    def __init__(self, visualGrid, startNode, endNode, obstacleGrid):
+    def __init__(self, visualGrid, startNode, endNode, obstacleGrid, step):
         self.visualGrid = visualGrid
         self.startNode = Node(startNode[0], startNode[1])
         self.endNode = Node(endNode[0], endNode[1])
         self.obstacleGrid = obstacleGrid
         self.openNodesArray = []
         self.closedNodesArray = []
+        self.step = step
         
     def getNeighbours(self, i, j):
         neighbours = []
@@ -190,6 +193,7 @@ class AStarAlgorithm:
                     currentNodeNeighbour.setParent(currentNode)
                     self.openNodesArray.append(currentNodeNeighbour)
             self.closedNodesArray.append(currentNode)
+            time.sleep(self.step)
         if currentNode == self.endNode:
             return self.reconstructPath()
         else:
