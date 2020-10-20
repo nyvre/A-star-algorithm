@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import math
 import time
 import threading
@@ -17,25 +18,39 @@ class GuiManager:
 
     def start(self):
         self.board = tk.Canvas(self.master, width = 450, height = 450, highlightthickness=1, highlightbackground="black")
-        createStartButton = tk.Button(self.master, text = 'Set start')
-        createEndButton = tk.Button(self.master, text = 'Set end')
-        findPathButton = tk.Button(self.master, text = 'Find path')
-        resetGridButton = tk.Button(self.master, text = 'Reset grid')
-        self.stepSlider = tk.Scale(self.master, from_=0, to=2, resolution = 0.1)
-        self.drawGrid(None)
-        self.board.pack()
-        createStartButton.pack()
-        createEndButton.pack()
-        findPathButton.pack()
-        resetGridButton.pack()
-        self.stepSlider.pack()
+        self.resetGrid(None)
+        self.board.pack(side = tk.TOP)
+
+        initialConditionsButtonsFrame = tk.Frame(self.master, relief=tk.RAISED, borderwidth=1)
+        initialConditionsButtonsFrame.pack(fill=tk.BOTH, expand=True, side = tk.LEFT)
+        createStartButton = tk.Button(initialConditionsButtonsFrame, text = 'Set start')
+        createEndButton = tk.Button(initialConditionsButtonsFrame, text = 'Set end')
+        resetGridButton = tk.Button(initialConditionsButtonsFrame, text = 'Reset grid')
+        createStartButton.pack(side = tk.TOP, fill = tk.X)
+        createEndButton.pack(side = tk.TOP, fill = tk.X)
+        resetGridButton.pack(side = tk.TOP, fill = tk.X)
+
+        startAlgorithmFrame = tk.Frame(self.master, relief=tk.RAISED, borderwidth=1)
+        startAlgorithmFrame.pack(fill=tk.BOTH, expand=True, side = tk.LEFT)
+        findPathButton = tk.Button(startAlgorithmFrame, text = 'Find path')
+        findPathButton.pack(fill=tk.BOTH, expand=True)
+
+        algorithmStepFrame = tk.Frame(self.master, relief=tk.RAISED, borderwidth=1)
+        algorithmStepFrame.pack(fill=tk.BOTH, expand=True, side = tk.LEFT)
+        algorithmStepLabel = tk.Label(algorithmStepFrame, text = "Algorithm step time [s]")
+        self.stepSlider = tk.Scale(algorithmStepFrame, from_=0, to=2, resolution = 0.1, orient=tk.HORIZONTAL)
+        algorithmStepLabel.pack(fill=tk.BOTH, expand=True)
+        self.stepSlider.pack(side = tk.BOTTOM)
         createStartButton.bind('<Button-1>', self.createStartNode)
         createEndButton.bind('<Button-1>', self.createEndNode)
         findPathButton.bind('<Button-1>', self.startAlgorithm)
-        resetGridButton.bind('<Button-1>', self.drawGrid)
+        resetGridButton.bind('<Button-1>', self.resetGrid)
         self.board.bind('<Button-1>', self.changeNodeStatus)
 
-    def drawGrid(self, event):
+    def resetGrid(self, event):
+        self.startNode = [None, None]
+        self.endNode = [None, None]
+        self.obstacleGrid = [[ False for y in range(15)] for x in range(15)]
         for i in range(15):
             self.board.create_line(0, i*30, 451, i*30, fill = 'black')
             self.board.create_line(i*30, 0, i*30, 451, fill = 'black')
@@ -79,10 +94,13 @@ class GuiManager:
         self.isEnd = True
 
     def startAlgorithm(self, event):
-        aStarAlgorithm = AStarAlgorithm(self.master, self.board, self.startNode, self.endNode, self.obstacleGrid, self.stepSlider.get())
-        thread = threading.Thread(target = aStarAlgorithm.start)
-        thread.start()
-        #self.drawPath()
+        if self.startNode != [None, None] and self.endNode != [None, None]:
+            aStarAlgorithm = AStarAlgorithm(self.master, self.board, self.startNode, self.endNode, self.obstacleGrid, self.stepSlider.get())
+            thread = threading.Thread(target = aStarAlgorithm.start)
+            thread.start()
+        else:
+            messagebox.showerror("Error", "Invalid initial conditions")
+            return
 
 
 class Node:
@@ -166,13 +184,12 @@ class AStarAlgorithm:
 
     def start(self):
         self.openNodesArray.append(self.startNode)
-        self.performStep()
-        while not self.finished.isSet():
-            self.finished.wait(10000)
+        self.performSteps()
+        self.finished.wait(10000)
         path = self.reconstructPath()
         self.finish(path)
 
-    def performStep(self):
+    def performSteps(self):
         self.openNodesArray.sort()
 
         currentNode = self.openNodesArray.pop()
@@ -203,7 +220,7 @@ class AStarAlgorithm:
                 self.openNodesArray.append(currentNodeNeighbour)
         self.closedNodesArray.append(currentNode)
         self.drawCurrentState()
-        self.master.after(int(self.step*1000), self.performStep)
+        self.master.after(int(self.step*1000), self.performSteps)
 
 
     def drawCurrentState(self):
@@ -233,7 +250,7 @@ class AStarAlgorithm:
 
 root = tk.Tk()           
     
-
+root.title('A* algorithm')
 guiManager = GuiManager(root)
 guiManager.start()
 root.mainloop()
